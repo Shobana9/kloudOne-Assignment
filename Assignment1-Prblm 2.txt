@@ -1,0 +1,35 @@
+Problem 2:
+
+Pre-Reqs:
+Create a field on Contact called Profile, text, 255
+Assignment:
+When an Account is updated and the Website is filled in, update all the Profile field on
+all Contacts to:
+? Profile = Website + ‘/’ + First Letter of First Name + Last Name
+
+
+Solution:
+
+trigger uppro on Account (after update) {
+
+list<Account> changeList = new List<Account>();
+for (Account acc: trigger.new) {
+system.debug('older website value: ' + trigger.oldMap.get(acc.Id).Website);
+system.debug('newer website vallue: ' + acc.Website);
+if (acc.Website != NULL && acc.Website != trigger.oldMap.get(acc.Id).Website) {
+changeList.add(acct);
+}
+}
+
+for (Contact cntAct: [SELECT Id, FirstName, LastName, Account.Id, Account.Website
+from Contact Where Account.Id IN:changeList]) {
+system.debug('print cntAct: ' + cntAct);
+if (cntAct.FirstName != NULL) {
+cntAct.profile__c = cntAct.Account.Website + '/' + cntAct.FirstName.left(1) +
+cntAct.LastName;
+system.debug('print profile: '+ cntAct.Profile__c);
+update cntAct;
+}
+}
+
+}

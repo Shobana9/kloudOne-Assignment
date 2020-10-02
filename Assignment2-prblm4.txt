@@ -1,0 +1,99 @@
+
+Write a trigger that counts the number of completed tasks on an account record and display the count in a custom field on Account record."
+
+Solution
+
+trigger countcode on Tasks (after insert, after undelete, after delete, after update)
+ {
+ Set<Id> setOpenTask = new Set<Id>();
+ Set<Id> setClosedTask = new Set<Id>();
+ List<Account> listAccountUpdate = new List<Account>();
+ List<Account> listOpenTaskAccounts = new List<Account>();
+ List<Account> listClosedTaskAccounts = new List<Account>();
+ if(Trigger.IsAfter){
+ if(Trigger.IsInsert || Trigger.IsUndelete || Trigger.isUpdate)
+ {
+ for(Task t: Trigger.new)
+ { 
+ if(String.valueOf(t.WhatId).startsWithIgnoreCase('001'))
+ {
+ if(t.Status.equalsIgnoreCase('Completed'))
+ {
+ setClosedTaskAccountIds.add(t.WhatId); 
+ System.debug('Inside Completed'+setClosedTaskAccountIds); 
+
+ }
+ else
+ {
+ setOpenTaskAccountIds.add(t.WhatId);
+ System.debug('Inside Open'+setOpenTaskAccountIds); 
+ }
+ if(Trigger.IsUpdate)
+ {
+ if(Trigger.oldMap.get(t.Id).WhatId != t.WhatId)
+ {
+ if(t.Status.equalsIgnoreCase('Completed'))
+ {
+ setClosedTaskAccountIds.add(Trigger.oldMap.get(t.Id).WhatId ); 
+ System.debug('Inside Update Closed'+setClosedTaskAccountIds);
+ }
+ else
+ {
+ setOpenTaskAccountIds.add(Trigger.oldMap.get(t.Id).WhatId );
+ System.debug('Inside Update Open'+setOpenTaskAccountIds);
+ }
+ }
+ }
+ }
+ }
+ }
+ if(Trigger.IsDelete)
+ {
+ for(Task t : Trigger.Old)
+ {
+ if(String.valueOf(t.WhatId).startsWithIgnoreCase('001'))
+ {
+ if(t.Status.equalsIgnoreCase('Completed'))
+ {
+ setClosedTaskAccountIds.add(t.WhatId); 
+ System.debug('Inside Deleted Completed');
+ } 
+ else 
+ {
+ setOpenTaskAccountIds.add(t.WhatId);
+ System.debug('Inside Deleted Open');
+ }
+ }
+ }
+ }
+ listOpenTaskAccounts =[SELECT Id, Name, Open_Task__c,
+      (Select Status From Tasks Where Status != 'Completed' )
+       FROM Account WHERE Id =:setOpenTaskAccountIds]; 
+listClosedTaskAccounts =[SELECT Id, Name, Closed_Task__c,
+      (Select Status From Tasks Where Status = 'Completed' )
+ FROM Account WHERE Id =:setClosedTaskAccountIds];
+  System.debug('ListOpenTaskAccounts'+listOpenTaskAccounts );
+ System.debug('ListClosedTaskAccounts'+listClosedTaskAccounts );
+ for(Account acc:listOpenTaskAccounts) 
+{
+ List<Task> listTask = acc.Tasks;
+ acc.Open_Task__c = listTask.size();
+ listAccountUpdate.add(acc);
+ }
+ for(Account acc:listClosedTaskAccounts)
+ {
+ List<Task> listTask = acc.Tasks; 
+acc.Closed_Task__c = listTask.size(); 
+listAccountUpdate.add(acc); 
+}
+ try
+{
+ System.debug('listAccountUpdate'+listAccountUpdate);
+ update listAccountUpdate;
+ }
+catch(System.Exception e)
+{
+ System.debug('error'+e.getMessage());
+ }
+ }
+}  

@@ -1,0 +1,22 @@
+Problem 1:
+
+Pre-Reqs:
+Create a field on Account called “is_gold”, checkbox, default off
+Assignment:
+When an Opportunity is greater than $20k, mark is_gold to TRUE
+
+Solution:
+
+
+trigger iss_gold on Opportunity (after insert,after update) {
+    for(Opportunity opportunity: Trigger.New){
+        for(Account ac:[select Id,iss_gold__c from Account where Id=: opportunity .AccountId])
+        {
+            if( opportunity .Amount>20000)
+            {
+                ac.iss_gold__c=True;
+                update ac;
+           }
+        }
+    }
+}
